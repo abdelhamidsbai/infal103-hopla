@@ -1,0 +1,81 @@
+# Hopla Market : réseau de l'entreprise, avec une zone LAN, une DMZ et Internet.
+#
+#   poste  ─┐
+#   compta ─┼─ sw-bureau ── fw ── web (DMZ)
+#   dns    ─┤               │
+#   nouveau-pc ┘            └──── client (Internet)
+name: hopla
+
+topology:
+  defaults:
+    kind: linux
+    image: nicolaka/netshoot:latest
+
+  nodes:
+    sw-bureau:
+      exec:
+        - ip link add br0 type bridge
+        - ip link set br0 up
+        - ip link set eth1 master br0
+        - ip link set eth2 master br0
+        - ip link set eth3 master br0
+        - ip link set eth4 master br0
+        - ip link set eth5 master br0
+
+    fw:
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - ip addr add 10.10.10.1/24 dev eth1
+        - ip addr add 10.10.20.1/24 dev eth2
+        - ip addr add 203.0.113.1/24 dev eth3
+
+    poste:
+      exec:
+        # Le poste ne sort que par sa passerelle : sans route, il le dit tout de suite.
+        - ip route del default
+        - ip addr add 10.10.10.10/24 dev eth1
+        - ip route add 10.10.20.0/24 via 10.10.10.1
+        - ip route add 203.0.113.0/24 via 10.10.10.1
+
+    compta:
+      image: nginx:alpine
+      exec:
+        - ip addr add 10.10.10.20/24 dev eth1
+        - ip route add 10.10.20.0/24 via 10.10.10.1
+        - ip route add 203.0.113.0/24 via 10.10.10.1
+        - sh -c "echo 'CONFIDENTIEL - salaires Hopla Market' > /usr/share/nginx/html/index.html"
+
+    dns:
+      image: alpine:3.20
+      binds:
+        - config/dnsmasq.conf:/etc/dnsmasq.d/hopla.conf:ro
+      exec:
+        - ip addr add 10.10.10.53/24 dev eth1
+        - ip route add 10.10.20.0/24 via 10.10.10.1
+        - apk add --no-cache dnsmasq
+        - dnsmasq --conf-file=/etc/dnsmasq.d/hopla.conf
+
+    nouveau-pc: {}
+
+    web:
+      image: nginx:alpine
+      exec:
+        - ip addr add 10.10.20.10/24 dev eth1
+        - ip route add 10.10.10.0/24 via 10.10.20.1
+        - ip route add 203.0.113.0/24 via 10.10.20.1
+        - sh -c "echo 'Bienvenue chez Hopla Market' > /usr/share/nginx/html/index.html"
+
+    client:
+      exec:
+        - ip addr add 203.0.113.10/24 dev eth1
+        - ip route add 10.10.10.0/24 via 203.0.113.1
+        - ip route add 10.10.20.0/24 via 203.0.113.1
+
+  links:
+    - endpoints: ["poste:eth1", "sw-bureau:eth1"]
+    - endpoints: ["compta:eth1", "sw-bureau:eth2"]
+    - endpoints: ["dns:eth1", "sw-bureau:eth3"]
+    - endpoints: ["nouveau-pc:eth1", "sw-bureau:eth4"]
+    - endpoints: ["fw:eth1", "sw-bureau:eth5"]
+    - endpoints: ["fw:eth2", "web:eth1"]
+    - endpoints: ["fw:eth3", "client:eth1"]

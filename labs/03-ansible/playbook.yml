@@ -1,0 +1,36 @@
+---
+- name: Configurer les serveurs web de Hopla Market
+  hosts: fronts
+  gather_facts: true
+
+  tasks:
+    - name: Installer nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Écouter uniquement en IPv4
+      ansible.builtin.lineinfile:
+        path: /etc/nginx/sites-enabled/default
+        regexp: 'listen \[::\]:80'
+        state: absent
+
+    - name: Déposer la page du site
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        mode: "0644"
+      notify: Recharger nginx
+
+    - name: Démarrer nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+
+  handlers:
+    - name: Recharger nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

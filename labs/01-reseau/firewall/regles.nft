@@ -1,0 +1,18 @@
+# Règles du firewall de Hopla Market.
+# Le principe : tout est interdit, sauf ce qui est écrit ici.
+flush ruleset
+
+table inet hopla {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    # Les réponses aux connexions déjà ouvertes peuvent revenir.
+    ct state established,related accept
+
+    # Règle 1 à compléter : le bureau peut aller partout.
+    # iifname "eth?" accept
+
+    # Règle 2 à compléter : Internet peut joindre le site, sur le port web.
+    # iifname "eth?" oifname "eth?" tcp dport ?? accept
+  }
+}

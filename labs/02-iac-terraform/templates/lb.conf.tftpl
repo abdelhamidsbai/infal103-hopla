@@ -1,0 +1,15 @@
+upstream fronts {
+%{ for front in fronts ~}
+  server ${front}:80;
+%{ endfor ~}
+}
+
+server {
+  listen 80;
+
+  location / {
+    proxy_pass http://fronts;
+    proxy_connect_timeout 1s;
+    proxy_next_upstream error timeout http_502;
+  }
+}

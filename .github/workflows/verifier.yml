@@ -1,0 +1,23 @@
+# Lance tous les TP sur une machine propre, pour vérifier le dépôt avant le cours.
+# Résultat : onglet Actions du dépôt.
+name: Vérifier les TP
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Installer containerlab et Ansible
+        run: |
+          bash -c "$(curl -sL https://get.containerlab.dev)"
+          pipx install --include-deps ansible
+      - name: Lancer tous les TP
+        run: bash formateur/verifier.sh

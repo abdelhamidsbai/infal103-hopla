@@ -1,0 +1,4 @@
+[fronts]
+%{ for front in fronts ~}
+${front} ansible_connection=community.docker.docker
+%{ endfor ~}

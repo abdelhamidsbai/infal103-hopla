@@ -1,0 +1,5 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+clab-*/
+labs/03-ansible/inventory.ini
