@@ -380,21 +380,78 @@ A CORRIGER Bureau vers le site : ce flux doit passer, mais il est bloqué
 - `A CORRIGER` : le flux ne se comporte pas comme prévu. La fin de la ligne explique pourquoi.
 - La dernière ligne fait le bilan.
 
-### 3. Compléter les règles
-**Pourquoi :** il faut maintenant rouvrir ce qui est permis, et seulement cela.
+### Comprendre le fichier de règles
+**Pourquoi :** vous venez de voir l'effet de ce fichier. Avant de le compléter, voyons comment il fonctionne.
 
-Ouvrez `labs/01-reseau/firewall/regles.nft`. Enlevez le `#` devant les deux règles, puis remplacez les `?` en vous aidant du tableau et du schéma.
+**nftables** est le firewall intégré à Linux. **`nft`** est la commande qui lui donne ses règles. Le fichier `firewall/regles.nft` n'est qu'un texte : il ne protège rien tant qu'il n'est pas chargé dans `fw`.
 
-Pour lire ce fichier :
+```mermaid
+flowchart LR
+  f["regles.nft<br/>un fichier dans le Codespace"] -- "docker exec -i clab-hopla-fw nft -f -" --> m["nftables dans fw<br/>les règles sont actives"]
+  m --> d["Chaque paquet qui traverse fw<br/>passe ou est jeté"]
+```
+
+Voici le fichier :
+
+```txt
+flush ruleset
+
+table inet hopla {
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    ct state established,related accept
+
+    # iifname "eth?" accept
+
+    # iifname "eth?" oifname "eth?" tcp dport ?? accept
+  }
+}
+```
 
 | Dans le fichier | Ce que cela veut dire |
 |---|---|
-| `policy drop` | Tout ce qui n'est pas autorisé est jeté |
-| `ct state established,related accept` | Les réponses aux connexions déjà ouvertes peuvent revenir |
-| `iifname "eth?"` | Le paquet entre par cette prise |
-| `oifname "eth?"` | Le paquet sort par cette prise |
-| `tcp dport ??` | Le paquet vise ce port |
+| `#` | Un commentaire : nftables ignore cette ligne. Les deux règles sont donc inactives au départ |
+| `flush ruleset` | Efface les anciennes règles. Vous pouvez donc recharger le fichier autant de fois que nécessaire |
+| `table inet hopla` | Une table, c'est-à-dire un classeur de règles. `inet` veut dire IPv4 et IPv6, et `hopla` est un nom libre |
+| `chain forward` | Une chaîne, c'est-à-dire une liste de règles lues de haut en bas. `forward` est un nom libre |
+| `type filter` | Cette chaîne sert à filtrer : laisser passer ou jeter |
+| `hook forward` | Elle s'applique aux paquets qui **traversent** `fw` pour aller ailleurs |
+| `priority 0` | L'ordre de passage s'il y a plusieurs chaînes. Une seule ici, donc cela ne change rien |
+| `policy drop` | Ce qui n'est accepté par aucune règle est jeté |
+| `ct state established,related accept` | `ct` est le suivi des connexions : `fw` se souvient de ce qui a été ouvert. Les réponses peuvent donc revenir sans règle de plus |
+| `iifname "eth?"` | Le paquet **entre** par cette prise |
+| `oifname "eth?"` | Le paquet **sort** par cette prise |
+| `tcp dport ??` | Le paquet vise ce port de destination |
 | `accept` | Le paquet passe |
+
+Dans une règle, toutes les conditions doivent être vraies pour que le paquet passe.
+
+**Comment `fw` décide**, pour chaque paquet qui le traverse :
+
+```mermaid
+flowchart TD
+  p["Un paquet arrive sur fw"] --> a{"Est-ce une réponse à une connexion ouverte ?"}
+  a -- "Oui" --> ok["Il passe"]
+  a -- "Non" --> b{"Correspond-il à la règle 1 ?"}
+  b -- "Oui" --> ok
+  b -- "Non" --> c{"Correspond-il à la règle 2 ?"}
+  c -- "Oui" --> ok
+  c -- "Non" --> no["policy drop : il est jeté"]
+```
+
+Dès qu'une règle accepte le paquet, `fw` s'arrête là.
+
+**Exemple avec le fichier tel quel :** une demande d'Internet vers le site n'est pas une réponse, et les deux règles sont encore des commentaires. Elle arrive donc à `policy drop`, et elle est jetée. C'est ce que vous avez constaté à l'étape 2.
+
+**Bon à savoir :**
+- Les règles vivent dans `fw`, en mémoire. Si vous modifiez le fichier sans le recharger, rien ne change. Si le réseau est recréé, elles sont perdues.
+- Pour voir les règles actives : `docker exec clab-hopla-fw nft list ruleset`.
+
+### 3. Compléter les règles
+**Pourquoi :** il faut maintenant rouvrir ce qui est permis, et seulement cela.
+
+Ouvrez `labs/01-reseau/firewall/regles.nft`. Enlevez le `#` devant les deux règles, puis remplacez les `?` en vous aidant du tableau des prises et du schéma de l'acte 2.
 
 Ici, `fw` est un simple Linux, et le firewall, c'est `nftables` : pas besoin de boîtier. En entreprise, le même rôle est souvent tenu par un boîtier comme FortiGate ou par un logiciel comme pfSense.
 
