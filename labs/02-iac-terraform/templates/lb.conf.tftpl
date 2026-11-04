@@ -1,4 +1,5 @@
 upstream fronts {
+  zone fronts 64k;
 %{ for front in fronts ~}
   server ${front}:80;
 %{ endfor ~}

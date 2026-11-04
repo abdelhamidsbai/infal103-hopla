@@ -32,6 +32,7 @@ resource "docker_container" "front" {
   image   = docker_image.serveur.image_id
   command = ["sleep", "infinity"]
   memory  = 256
+  memory_swap = -1 # évite un faux changement à chaque apply
 
   networks_advanced {
     name = docker_network.front.name
@@ -69,6 +70,7 @@ resource "docker_container" "db" {
   name   = "hopla-db"
   image  = docker_image.postgres.image_id
   memory = var.db_memory_mb
+  memory_swap = -1 # évite un faux changement à chaque apply
   env    = ["POSTGRES_PASSWORD=${var.db_password}", "POSTGRES_DB=hopla"]
 
   networks_advanced {

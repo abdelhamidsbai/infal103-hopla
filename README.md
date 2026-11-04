@@ -3,10 +3,10 @@
 Hopla Market vend en ligne. Tout tourne sur un seul PC, sous le bureau du comptable. En deux jours, nous allons construire son infrastructure, un incident à la fois.
 
 ## Démarrer (10 minutes, à faire une seule fois)
-1. Connectez-vous à GitHub.
-2. Cliquez sur **Code > Codespaces > Create codespace on main**.
-3. Attendez la fin de l'installation : comptez environ 5 minutes.
-4. Ouvrez un terminal, puis lancez :
+1. Connectez-vous à votre compte GitHub **personnel**.
+2. Ouvrez ce lien : **https://codespaces.new/abdelhamidsbai/infal103-hopla**
+3. Cliquez sur **Create codespace**, puis attendez la fin de l'installation : comptez environ 5 minutes.
+4. Ouvrez un terminal (menu ☰ → Terminal → New Terminal), puis lancez :
 
 ```bash
 bash labs/00-verifier.sh
@@ -14,7 +14,21 @@ bash labs/00-verifier.sh
 
 Vous devez lire : `Environnement prêt`.
 
-**Arrêtez votre Codespace chaque soir** pour préserver votre quota gratuit.
+## Règles d'usage
+- **Fin de séance :** arrêtez votre Codespace (☰ → *Stop Current Codespace*, ou depuis https://github.com/codespaces), pour préserver votre quota gratuit.
+- **Reprise :** rouvrez le même Codespace depuis https://github.com/codespaces. Vos fichiers y sont toujours.
+- **Fin du module :** supprimez votre Codespace, car il consomme votre quota même arrêté.
+
+## Travailler sur votre PC (facultatif)
+Le Codespace reste le chemin conseillé : c'est celui que nous suivons en cours. Pour travailler sur votre PC, il faut Docker en état de marche, et les ports `8080` et `3001` libres.
+
+| Votre PC | Comment faire | TP possibles |
+|---|---|---|
+| Linux | Installez Docker, containerlab, Terraform et Ansible, puis lancez `bash labs/00-verifier.sh` | Tous |
+| Windows ou Mac | Installez Docker Desktop et VS Code avec l'extension Dev Containers. Ouvrez le dépôt, puis choisissez **Reopen in Container** | Tous |
+| Windows ou Mac, sans Dev Containers | Installez Docker Desktop, Terraform et Ansible | TP 2, 3 et 4 : containerlab, utilisé au TP 1, a besoin de Linux |
+
+Si quelque chose bloque sur votre PC, repassez sur le Codespace : le formateur ne pourra pas dépanner chaque machine pendant le cours.
 
 Un sigle inconnu ? Regardez le [glossaire](labs/glossaire.md).
 

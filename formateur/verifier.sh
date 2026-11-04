@@ -9,7 +9,7 @@ test_ok() { echo "OK    $1"; ok=$((ok+1)); }
 test_ko() { echo "ECHEC $1"; ko=$((ko+1)); }
 attendu() { local nom="$1"; shift; if "$@" >/dev/null 2>&1; then test_ok "$nom"; else test_ko "$nom"; fi; }
 refuse()  { local nom="$1"; shift; if "$@" >/dev/null 2>&1; then test_ko "$nom"; else test_ok "$nom"; fi; }
-contient() { local nom="$1" motif="$2"; shift 2; if "$@" 2>&1 | grep -q -- "$motif"; then test_ok "$nom"; else test_ko "$nom (attendu : $motif)"; fi; }
+contient() { local nom="$1" motif="$2" sortie; shift 2; sortie="$("$@" 2>&1)"; if printf '%s\n' "$sortie" | grep -q -- "$motif"; then test_ok "$nom"; else test_ko "$nom (attendu : $motif)"; printf '%s\n' "$sortie" | tail -25 | sed 's/^/      /'; fi; }
 
 echo "=== Environnement"
 attendu "labs/00-verifier.sh" bash "$racine/labs/00-verifier.sh"
@@ -91,6 +91,7 @@ sleep 1
 reponses=$(for i in 1 2 3 4; do curl -s -m 4 localhost:8080 | grep -o 'hopla-front-[0-9]'; done | sort -u | wc -l)
 [ "$reponses" -eq 2 ] && test_ok "répartition sur 2 serveurs" || test_ko "répartition : $reponses serveur(s)"
 contient "relance : changed=0" "changed=0.*failed=0" ansible-playbook playbook.yml
+contient "terraform ne voit toujours aucun changement" "No changes" sh -c "cd '$racine/labs/02-iac-terraform' && terraform plan -input=false"
 page="$(cat templates/index.html.j2)"
 sed -i 's/Hopla Market/Hopla Market Test/' templates/index.html.j2
 ansible-playbook playbook.yml >/dev/null 2>&1
@@ -101,7 +102,7 @@ docker stop hopla-front-1 >/dev/null
 contient "panne d'un serveur : le site répond" "hopla-front-2" curl -s -m 8 localhost:8080
 docker start hopla-front-1 >/dev/null
 contient "le playbook relance le serveur" "failed=0" ansible-playbook playbook.yml
-sleep 1
+sleep 11
 reponses=$(for i in 1 2 3 4 5 6; do curl -s -m 4 localhost:8080 | grep -o 'hopla-front-[0-9]'; done | sort -u | wc -l)
 [ "$reponses" -eq 2 ] && test_ok "les 2 serveurs répondent à nouveau" || test_ko "après relance : $reponses serveur(s)"
 
@@ -112,7 +113,7 @@ attendu "supervision déployée" terraform apply -auto-approve -input=false
 sleep 20
 attendu "l'interface répond" curl -fsS -m 5 -o /dev/null localhost:3001
 docker stop hopla-front-1 >/dev/null
-attendu "panne d'un serveur : la sonde LB reste bonne" docker exec hopla-lb timeout 8 wget -q -O /dev/null http://localhost
+attendu "panne d'un serveur : le site répond encore" curl -fsS -m 8 -o /dev/null localhost:8080
 docker stop hopla-front-2 >/dev/null
 refuse  "panne totale : le site est en erreur" curl -fsS -m 8 -o /dev/null localhost:8080
 docker start hopla-front-1 hopla-front-2 >/dev/null
