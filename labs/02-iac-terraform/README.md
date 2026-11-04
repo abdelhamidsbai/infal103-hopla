@@ -56,6 +56,19 @@ terraform init
 
 **Vous devez voir :** `Terraform has been successfully initialized!`
 
+**Comment lire le résultat :**
+
+```text
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing version 4.6.0 of kreuzwerker/docker from the dependency lock file
+...
+Terraform has been successfully initialized!
+```
+- `Initializing provider plugins` : Terraform récupère les modules qui savent parler à Docker. La première fois, vous lirez `Installing` à la place de `Using` ou `Reusing`.
+- `successfully initialized` : la seule ligne à vérifier. La suite du message n'est qu'un rappel.
+
 ### 3. Lire le devis
 **Pourquoi :** on veut savoir ce qui va se passer avant que cela arrive.
 ```bash
@@ -64,6 +77,29 @@ terraform plan
 - `terraform plan` : compare le code à ce qui existe, puis annonce les changements, sans rien toucher. `+` veut dire créer, `~` modifier, `-` détruire, et `-/+` détruire puis recréer.
 
 **Vous devez voir :** `Plan: 10 to add, 0 to change, 0 to destroy.` Rien n'a encore été créé.
+
+**Comment lire le résultat :**
+
+Le résultat fait plusieurs centaines de lignes. Commencez par la fin, puis remontez. En voici un extrait :
+
+```text
+Terraform will perform the following actions:
+
+  # docker_container.db will be created
+  + resource "docker_container" "db" {
+      + id                                          = (known after apply)
+      + memory                                      = 256
+      + name                                        = "hopla-db"
+      ...
+    }
+...
+Plan: 10 to add, 0 to change, 0 to destroy.
+```
+- `Plan: 10 to add, 0 to change, 0 to destroy.` : le résumé, à lire en premier. 10 créations, 0 modification, 0 destruction.
+- `# docker_container.db will be created` : le titre de chaque ressource, et ce qui va lui arriver.
+- `+` en début de ligne : cet élément sera créé.
+- `(known after apply)` : Terraform ne connaîtra cette valeur qu'après la création.
+- `Note: You didn't use the -out option...` : ignorez ce message dans ce TP.
 
 ### 4. Lancer le chantier
 **Pourquoi :** le devis convient, on passe à la construction.
@@ -76,6 +112,35 @@ Relisez le plan, puis tapez `yes`.
 
 **Vous devez voir :** `Apply complete! Resources: 10 added`.
 
+**Comment lire le résultat :**
+
+```text
+Plan: 10 to add, 0 to change, 0 to destroy.
+...
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+docker_network.front: Creating...
+docker_network.front: Creation complete after 2s [id=a0216f7f1be7...]
+...
+Apply complete! Resources: 10 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+serveurs_web = [
+  "hopla-front-1",
+  "hopla-front-2",
+]
+site = "http://localhost:8080"
+```
+- `Enter a value:` : Terraform attend votre réponse. Seul `yes` lance le chantier.
+- `Creating...`, puis `Creation complete` : le suivi, ressource par ressource.
+- `Apply complete! Resources: 10 added` : tout est créé. C'est la ligne à vérifier.
+- `Outputs` : ce que `outputs.tf` demande d'afficher à la fin.
+
 ### 5. Regarder le résultat
 **Pourquoi :** on vérifie par un autre moyen que Terraform, et on essaie le site.
 ```bash
@@ -86,6 +151,34 @@ curl -i localhost:8080
 - `curl -i localhost:8080` : demande la page du site. `-i` affiche aussi le code de réponse, comme `200` ou `502`. Le port `8080` du Codespace mène au port 80 de `hopla-lb`.
 
 **Vous devez voir :** 4 conteneurs, puis `502 Bad Gateway`.
+
+**Comment lire le résultat :**
+
+Résultat de `docker ps`. Le tableau est large, faites défiler si besoin :
+
+```text
+CONTAINER ID   IMAGE          COMMAND                  CREATED                  STATUS                  PORTS                  NAMES
+a92bd9545157   785835ea65db   "/docker-entrypoint.…"   Less than a second ago   Up Less than a second   0.0.0.0:8080->80/tcp   hopla-lb
+1b61d6112d9a   0cefaabd882e   "docker-entrypoint.s…"   Less than a second ago   Up Less than a second   5432/tcp               hopla-db
+5f1b7dfa4a78   b18b261e1b49   "sleep infinity"         Less than a second ago   Up Less than a second                          hopla-front-1
+f25c746a757a   b18b261e1b49   "sleep infinity"         Less than a second ago   Up Less than a second                          hopla-front-2
+```
+- `NAMES`, la dernière colonne : le nom du conteneur. C'est celle qu'on lit en premier.
+- `STATUS` : `Up` veut dire allumé.
+- `PORTS` : `0.0.0.0:8080->80/tcp` veut dire que le port 8080 du Codespace mène au port 80 de `hopla-lb`. `5432/tcp`, sans flèche : ce port n'est pas ouvert vers l'extérieur.
+- `CONTAINER ID`, `IMAGE` et `COMMAND` : vous pouvez les ignorer ici.
+
+Résultat de `curl -i`, avec le début de la réponse :
+
+```text
+HTTP/1.1 502 Bad Gateway
+Server: nginx/1.31.8
+...
+<center><h1>502 Bad Gateway</h1></center>
+```
+- `HTTP/1.1 502 Bad Gateway` : le code de réponse, sur la première ligne. `200` veut dire que tout va bien. `502` veut dire que le serveur intermédiaire n'a pas obtenu de réponse des serveurs derrière lui.
+- `Server: nginx` : c'est bien `hopla-lb` qui répond.
+- La suite est la page d'erreur, en HTML.
 
 Voici ce que vous venez de créer :
 
@@ -111,6 +204,20 @@ terraform apply
 
 **Vous devez voir :** `No changes.`
 
+**Comment lire le résultat :**
+
+```text
+docker_network.front: Refreshing state... [id=a0216f7f1be7...]
+docker_container.db: Refreshing state... [id=1b61d6112d9a...]
+...
+No changes. Your infrastructure matches the configuration.
+...
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+```
+- `Refreshing state...` : Terraform vérifie où en est chaque ressource.
+- `No changes` : ce qui existe correspond déjà au code.
+- `0 added, 0 changed, 0 destroyed` : il n'a rien touché.
+
 **Question :** que se serait-il passé avec un script lancé deux fois ?
 
 ## Partie 2 : modifier Hopla
@@ -133,6 +240,34 @@ docker inspect -f '{{.HostConfig.Memory}}' hopla-db
 
 **Vous devez voir :** `536870912`, soit 512 Mo.
 
+**Comment lire le résultat :**
+
+Résultat de `terraform plan` :
+
+```text
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # docker_container.db will be updated in-place
+  ~ resource "docker_container" "db" {
+      ~ memory                                      = 256 -> 512
+        name                                        = "hopla-db"
+        # (50 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+- `~` : modifier. Le plan peut aussi afficher `+` (créer), `-` (détruire) ou `-/+` (détruire puis recréer).
+- `~ memory = 256 -> 512` : l'ancienne valeur, puis la nouvelle.
+- `(50 unchanged attributes hidden)` : le reste ne change pas, et Terraform ne l'affiche pas.
+
+Résultat de `docker inspect` : le nombre est en octets. 512 × 1024 × 1024 = 536 870 912.
+
+```text
+536870912
+```
+
 **Question :** dans le plan, la base est-elle modifiée (`~`) ou détruite puis recréée (`-/+`) ?
 
 ### 8. Ajouter un serveur web
@@ -150,6 +285,34 @@ docker ps
 
 **Vous devez voir :** `hopla-front-3` dans la liste.
 
+**Comment lire le résultat :**
+
+Résultat de `terraform plan`, en ne gardant que les titres :
+
+```text
+  # docker_container.front[2] will be created
+  # docker_container.lb must be replaced
+      - upload { # forces replacement
+      + upload { # forces replacement
+  # local_file.inventaire must be replaced
+Plan: 3 to add, 0 to change, 2 to destroy.
+```
+- `front[2]` : le troisième serveur, car la numérotation commence à 0. Il deviendra `hopla-front-3`.
+- `must be replaced` : détruit, puis recréé.
+- `# forces replacement` : le changement qui oblige à recréer la ressource.
+- `3 to add, 2 to destroy` : 1 nouveau serveur, plus 2 ressources recréées.
+
+Résultat de `docker ps` : la dernière colonne compte maintenant 5 conteneurs.
+
+```text
+CONTAINER ID   IMAGE          COMMAND                  CREATED                  STATUS                  PORTS                  NAMES
+8cb7c22bac97   785835ea65db   "/docker-entrypoint.…"   Less than a second ago   Up Less than a second   0.0.0.0:8080->80/tcp   hopla-lb
+cb757ae141ca   b18b261e1b49   "sleep infinity"         Less than a second ago   Up Less than a second                          hopla-front-3
+1b61d6112d9a   0cefaabd882e   "docker-entrypoint.s…"   14 seconds ago           Up 14 seconds           5432/tcp               hopla-db
+5f1b7dfa4a78   b18b261e1b49   "sleep infinity"         14 seconds ago           Up 14 seconds                                  hopla-front-1
+f25c746a757a   b18b261e1b49   "sleep infinity"         14 seconds ago           Up 14 seconds                                  hopla-front-2
+```
+
 **Question :** pourquoi le load balancer change-t-il aussi ?
 
 ### 9. Revenir à deux serveurs
@@ -163,6 +326,21 @@ terraform apply
 
 **Vous devez voir :** `hopla-front-3` détruit. Gardez bien 2 serveurs pour la suite.
 
+**Comment lire le résultat :**
+
+```text
+  # docker_container.front[2] will be destroyed
+  # (because index [2] is out of range for count)
+  # docker_container.lb must be replaced
+  # local_file.inventaire must be replaced
+Plan: 2 to add, 0 to change, 3 to destroy.
+...
+Apply complete! Resources: 2 added, 0 changed, 3 destroyed.
+```
+- `will be destroyed` : le troisième serveur va disparaître.
+- `out of range for count` : la raison. Il n'y a plus que 2 serveurs demandés, donc `front[2]` n'a plus de place.
+- `3 destroyed, 2 added` : le serveur en trop, plus le load balancer et l'inventaire, recréés avec la nouvelle liste.
+
 ## Partie 3 : ce que Terraform ne fait pas
 
 ### 10. Supprimer la base à la main
@@ -175,6 +353,19 @@ terraform plan
 - `terraform plan` : compare de nouveau le code à ce qui existe vraiment.
 
 **Vous devez voir :** Terraform propose de recréer `hopla-db`.
+
+**Comment lire le résultat :**
+
+`docker rm` affiche le nom du conteneur supprimé. Puis `terraform plan` :
+
+```text
+hopla-db
+...
+  # docker_container.db will be created
+...
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+Terraform a comparé son carnet à ce qui existe vraiment : la base manque, il propose de la créer. Une différence entre le code et la réalité s'appelle une dérive.
 
 **Question :** il recréera le conteneur, mais que deviendront les données ?
 
@@ -194,6 +385,13 @@ docker exec hopla-lb ping -c 1 hopla-db
 
 **Vous devez voir :** `bad address`. Le load balancer n'est pas sur le même réseau que la base.
 
+**Comment lire le résultat :**
+
+```text
+ping: bad address 'hopla-db'
+```
+`bad address` : le nom `hopla-db` n'existe pas pour cette machine. `hopla-lb` n'est branché que sur le réseau `hopla-front`, et la base est sur `hopla-back`.
+
 ### 12. Ouvrir le carnet de chantier
 **Pourquoi :** le fichier `terraform.tfstate` contient tout ce que Terraform sait. Tout, vraiment ?
 ```bash
@@ -202,6 +400,13 @@ grep -c demo-hopla terraform.tfstate
 - `grep -c demo-hopla terraform.tfstate` : compte les lignes du fichier qui contiennent `demo-hopla`, le mot de passe de la base.
 
 **Vous devez voir :** un nombre supérieur à 0. Le mot de passe est écrit en clair dans ce fichier.
+
+**Comment lire le résultat :**
+
+```text
+1
+```
+`grep -c` affiche un nombre : les lignes du fichier qui contiennent `demo-hopla`. Ici 1 ligne, donc le mot de passe est bien dans le fichier. `0` voudrait dire qu'il n'y est pas.
 
 **Question :** pourquoi ne faut-il pas envoyer ce fichier dans Git ?
 

@@ -66,6 +66,25 @@ sudo containerlab deploy -t hopla.clab.yml
 
 **Vous devez voir :** un tableau de 8 machines, au bout d'une à deux minutes.
 
+**Comment lire le résultat :**
+
+```text
+21:13:35 INFO Creating container name=poste
+21:13:36 INFO Created link: poste:eth1 ▪┄┄▪ sw-bureau:eth1
+21:13:38 INFO Executed command node=poste command="ip addr add 10.10.10.10/24 dev eth1" stdout=""
+...
+╭───────────────────────┬──────────────────────────┬─────────┬───────────────────╮
+│          Name         │        Kind/Image        │  State  │   IPv4/6 Address  │
+├───────────────────────┼──────────────────────────┼─────────┼───────────────────┤
+│ clab-hopla-poste      │ linux                    │ running │ 172.20.20.7       │
+│                       │ nicolaka/netshoot:latest │         │ 3fff:172:20:20::7 │
+╰───────────────────────┴──────────────────────────┴─────────┴───────────────────╯
+```
+- Les lignes `INFO` racontent le chantier : `Creating container` crée une machine, `Created link` tire un câble, `Executed command` lance une commande de démarrage. Elles défilent : pas besoin de les lire.
+- `Name` : le nom de la machine. Vous vous en servirez avec `docker exec`.
+- `State` : `running` veut dire que la machine est allumée. C'est la colonne à vérifier : 8 lignes `running`.
+- `IPv4/6 Address` : l'adresse d'administration du laboratoire (`172.20.20.x`). Ce n'est **pas** l'adresse de la machine dans le réseau de Hopla : ignorez-la.
+
 ### 2. Entrer dans le poste d'accueil
 **Pourquoi :** pour voir le réseau comme le voit le poste de l'accueil.
 
@@ -80,6 +99,15 @@ docker exec -it clab-hopla-poste bash
 
 **Vous devez voir :** une nouvelle invite de commande, à l'intérieur de `poste`.
 
+**Comment lire le résultat :**
+
+```text
+poste:~#
+```
+- `poste` : le nom de la machine où vous êtes maintenant.
+- `~` : votre dossier personnel dans cette machine.
+- `#` : le terminal attend votre commande.
+
 ### 3. Lire son adresse et ses routes
 **Pourquoi :** une machine a besoin de deux choses pour communiquer : une adresse, et des routes pour savoir où envoyer ses paquets.
 
@@ -92,6 +120,43 @@ ip route
 - `ip route` : affiche la table de routage, c'est-à-dire le chemin à prendre selon la destination. Une ligne `A via B` se lit : pour aller vers A, passe par B.
 
 **Vous devez voir :** `10.10.10.10/24`, puis une ligne `10.10.20.0/24 via 10.10.10.1`.
+
+**Comment lire le résultat :**
+
+Résultat de `ip addr show eth1` :
+
+```text
+24: eth1@if23: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9500 qdisc noqueue state UP group default
+    link/ether aa:c1:ab:d1:82:b5 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    altname clab-o-8d8a37345b2b8f49
+    inet 10.10.10.10/24 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a8c1:abff:fed1:82b5/64 scope link proto kernel_ll
+       valid_lft forever preferred_lft forever
+```
+Seuls trois morceaux nous intéressent :
+- `state UP` : la prise est active.
+- `link/ether aa:c1:ab:d1:82:b5` : l'adresse MAC de la carte réseau. La vôtre sera différente.
+- `inet 10.10.10.10/24` : l'adresse IP du poste. `/24` veut dire que les machines en `10.10.10.xxx` sont dans sa rue.
+
+Le reste est du détail technique. La ligne `inet6 fe80::...` est une adresse IPv6 créée automatiquement : nous ne nous en servons pas ici.
+
+Résultat de `ip route` : chaque ligne est un chemin.
+
+```text
+10.10.10.0/24 dev eth1 proto kernel scope link src 10.10.10.10
+10.10.20.0/24 via 10.10.10.1 dev eth1
+172.20.20.0/24 dev eth0 proto kernel scope link src 172.20.20.2
+203.0.113.0/24 via 10.10.10.1 dev eth1
+```
+| Début de la ligne | À lire comme |
+|---|---|
+| `10.10.10.0/24 dev eth1` | Sa propre rue : sortir directement par la prise `eth1`, sans passerelle |
+| `10.10.20.0/24 via 10.10.10.1` | La rue du site : passer par `10.10.10.1` |
+| `172.20.20.0/24 dev eth0` | Le réseau du laboratoire : à ignorer |
+| `203.0.113.0/24 via 10.10.10.1` | Internet : passer par `10.10.10.1` |
+
+Les mots `proto kernel scope link src ...` sont des détails : ignorez-les.
 
 **Question :** par quelle passerelle le poste passe-t-il pour rejoindre le serveur web ?
 
@@ -110,6 +175,30 @@ curl -m 3 http://10.10.20.10
 
 **Vous devez voir :** le ping répond, puis `Bienvenue chez Hopla Market`.
 
+**Comment lire le résultat :**
+
+Résultat de `ping` :
+
+```text
+PING 10.10.10.20 (10.10.10.20) 56(84) bytes of data.
+64 bytes from 10.10.10.20: icmp_seq=1 ttl=64 time=0.099 ms
+64 bytes from 10.10.10.20: icmp_seq=2 ttl=64 time=0.041 ms
+
+--- 10.10.10.20 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1040ms
+rtt min/avg/max/mdev = 0.041/0.070/0.099/0.029 ms
+```
+- `64 bytes from 10.10.10.20` : une réponse est arrivée. Une ligne par message.
+- `icmp_seq=1` : le numéro du message.
+- `time=0.099 ms` : la durée de l'aller-retour.
+- `2 packets transmitted, 2 received, 0% packet loss` : le bilan, à lire en premier. 2 envoyés, 2 reçus, rien de perdu.
+
+Résultat de `curl` : la page du site s'affiche directement.
+
+```text
+Bienvenue chez Hopla Market
+```
+
 ### 5. Lire le cache ARP du poste
 **Pourquoi :** sur un câble, on se parle avec des adresses MAC (l'adresse de la carte réseau). ARP (Address Resolution Protocol) trouve la MAC à partir de l'adresse IP, et le poste garde les réponses dans un cache.
 
@@ -120,6 +209,18 @@ ip neigh
 - `ip neigh` : affiche les voisins connus du poste (*neighbours*), avec leur adresse IP et leur adresse MAC.
 
 **Vous devez voir :** une ligne pour `10.10.10.20` et une pour `10.10.10.1`, chacune avec une adresse MAC après `lladdr`. Ignorez les lignes `eth0`.
+
+**Comment lire le résultat :**
+
+```text
+10.10.10.20 dev eth1 lladdr aa:c1:ab:0a:b5:94 REACHABLE
+10.10.10.1 dev eth1 lladdr aa:c1:ab:79:6f:73 REACHABLE
+```
+Chaque ligne est un voisin :
+- `10.10.10.20` : son adresse IP.
+- `dev eth1` : la prise par laquelle on le joint.
+- `lladdr aa:c1:ab:0a:b5:94` : son adresse MAC. C'est la réponse d'ARP.
+- `REACHABLE` : il a répondu il y a peu. `STALE` veut dire qu'on ne lui a pas parlé depuis un moment : ce n'est pas une panne.
 
 **Question :** le poste vient de joindre le site `10.10.20.10`. Pourquoi sa MAC n'apparaît-elle pas ?
 
@@ -135,6 +236,18 @@ traceroute -n 10.10.20.10
 
 **Vous devez voir :** d'abord `10.10.10.1`, puis `10.10.20.10`.
 
+**Comment lire le résultat :**
+
+```text
+traceroute to 10.10.20.10 (10.10.20.10), 30 hops max, 46 byte packets
+ 1  10.10.10.1  0.008 ms  0.002 ms  0.002 ms
+ 2  10.10.20.10  0.002 ms  0.002 ms  0.002 ms
+```
+- La première ligne rappelle la destination. `30 hops max` : on abandonne après 30 étapes.
+- `1  10.10.10.1` : la première étape, le routeur.
+- `2  10.10.20.10` : la deuxième étape, le site. La destination est atteinte.
+- Les trois durées correspondent à trois essais par étape. Si vous voyez `* * *`, cette étape n'a pas répondu.
+
 ### 7. Reproduire l'incident
 **Pourquoi :** on retire la route vers le site, pour provoquer la panne de l'accueil et observer ce qui casse, et ce qui ne casse pas.
 
@@ -148,6 +261,19 @@ curl -m 3 http://10.10.20.10
 - `ping` et `curl` : les deux mêmes tests qu'à l'étape 4, pour comparer.
 
 **Vous devez voir :** la compta répond toujours, et le `curl` vers le site échoue avec une erreur de connexion. Le poste ne sait plus comment rejoindre cette rue.
+
+**Comment lire le résultat :**
+
+`ip route del` n'affiche rien : sous Linux, une commande qui réussit reste souvent silencieuse.
+
+Le `ping` affiche toujours `0% packet loss`. Le `curl`, lui, échoue :
+
+```text
+curl: (7) Failed to connect to 10.10.20.10:80 after 0 ms: Could not connect to server
+```
+- `curl: (7)` : le message vient de `curl`, et `7` est son numéro d'erreur.
+- `10.10.20.10:80` : l'adresse et le port qu'il essayait de joindre.
+- `after 0 ms` : l'échec est immédiat. Le poste n'a pas attendu de réponse.
 
 **Question :** pourquoi la compta marche-t-elle encore ?
 
@@ -165,6 +291,15 @@ exit
 - `exit` : quitte `poste` et revient dans le terminal du Codespace.
 
 **Vous devez voir :** `Bienvenue chez Hopla Market`.
+
+**Comment lire le résultat :**
+
+`ip route add` ne dit rien, comme `ip route del`. Le `curl` affiche de nouveau la page :
+
+```text
+Bienvenue chez Hopla Market
+```
+Après `exit`, l'invite `poste:~#` disparaît : vous êtes revenu dans le terminal du Codespace.
 
 ### Avant le retour collectif
 Expliquez à votre voisin, sans regarder vos notes, le trajet d'un paquet entre le poste et le site.
@@ -207,6 +342,13 @@ docker exec clab-hopla-client curl -s -m 4 http://10.10.10.20
 
 **Vous devez voir :** `CONFIDENTIEL - salaires Hopla Market`.
 
+**Comment lire le résultat :**
+
+```text
+CONFIDENTIEL - salaires Hopla Market
+```
+C'est la page de la compta, obtenue depuis `client`, c'est-à-dire depuis Internet. Rien ne bloque cette demande : c'est l'incident.
+
 ### 2. Charger le fichier de règles tel quel
 **Pourquoi :** le fichier fourni interdit tout, sauf les réponses aux connexions déjà ouvertes. On commence par voir l'effet de cette interdiction.
 
@@ -221,6 +363,22 @@ bash firewall/tester.sh
 - `bash firewall/tester.sh` : essaie les 4 flux de la matrice, et indique pour chacun `BON` ou `A CORRIGER`.
 
 **Vous devez voir :** Internet ne lit plus la compta, mais le site et le bureau sont coupés aussi. Tout est interdit par défaut : c'est le principe.
+
+**Comment lire le résultat :**
+
+`nft` n'affiche rien quand le chargement réussit. Le script de test affiche :
+
+```text
+A CORRIGER Internet vers le site : ce flux doit passer, mais il est bloqué
+BON        Internet vers la compta
+BON        Site vers la compta
+A CORRIGER Bureau vers le site : ce flux doit passer, mais il est bloqué
+
+2 tests sur 4 sont bons
+```
+- `BON` : ce flux se comporte comme le demande la matrice. `BON Internet vers la compta` veut dire qu'il est bien **bloqué**.
+- `A CORRIGER` : le flux ne se comporte pas comme prévu. La fin de la ligne explique pourquoi.
+- La dernière ligne fait le bilan.
 
 ### 3. Compléter les règles
 **Pourquoi :** il faut maintenant rouvrir ce qui est permis, et seulement cela.
@@ -253,6 +411,20 @@ bash firewall/tester.sh
 Ce sont les deux mêmes commandes qu'à l'étape 2. Le fichier commence par `flush ruleset`, qui efface les anciennes règles : vous pouvez le recharger autant de fois que nécessaire.
 
 **Vous devez voir :** `4 tests sur 4 sont bons`. Sinon, le script indique le flux à corriger : modifiez le fichier et relancez ces deux commandes.
+
+**Comment lire le résultat :**
+
+```text
+BON        Internet vers le site
+BON        Internet vers la compta
+BON        Site vers la compta
+BON        Bureau vers le site
+
+4 tests sur 4 sont bons
+```
+Quatre lignes `BON`, et `4 tests sur 4` : les flux autorisés passent, les autres sont bloqués.
+
+Si `nft` affiche un message contenant `Error`, le chargement a échoué et les anciennes règles restent en place : relisez la ligne indiquée dans le message.
 
 **Question :** si le site est piraté, peut-il atteindre la compta ?
 
@@ -291,6 +463,17 @@ ip addr show eth1
 
 **Vous devez voir :** aucune ligne `inet` sur `eth1`. Ce poste n'a pas d'adresse.
 
+**Comment lire le résultat :**
+
+```text
+107: eth1@if108: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9500 qdisc noqueue state UP group default
+    link/ether aa:c1:ab:7f:7b:28 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    altname clab-o-4e4b0a2d9f55d38c
+    inet6 fe80::a8c1:abff:fe7f:7b28/64 scope link proto kernel_ll
+       valid_lft forever preferred_lft forever
+```
+Comparez avec le poste d'accueil : il manque la ligne `inet 10.10.10.xxx/24`. La prise est active (`state UP`), mais le poste n'a pas d'adresse IPv4. La ligne `inet6 fe80::...` est créée automatiquement et ne lui permet pas de joindre le reste du réseau ici.
+
 ### 2. Demander une adresse
 **Pourquoi :** Karim ne va pas configurer son poste à la main. Il le demande au serveur DHCP.
 
@@ -306,6 +489,26 @@ ip addr show eth1
 - `ip addr show eth1` : vérifie l'adresse reçue.
 
 **Vous devez voir :** une adresse entre `10.10.10.100` et `10.10.10.150`.
+
+**Comment lire le résultat :**
+
+```text
+udhcpc: started, v1.38.0
+udhcpc: broadcasting discover
+udhcpc: broadcasting select for 10.10.10.111, server 10.10.10.53
+udhcpc: lease of 10.10.10.111 obtained from 10.10.10.53, lease time 43200
+mv: can't rename '/etc/resolv.conf.74': Resource busy
+```
+- `broadcasting discover` : le poste crie à tout le réseau qu'il cherche un serveur DHCP. Cette ligne peut apparaître plusieurs fois.
+- `select for 10.10.10.111, server 10.10.10.53` : il choisit l'adresse proposée par ce serveur.
+- `lease of 10.10.10.111 obtained` : c'est obtenu. `lease time 43200` : l'adresse est prêtée pour 43 200 secondes, soit 12 heures.
+- `mv: can't rename ... Resource busy` : ignorez cette ligne. Docker protège ce fichier, et cela n'empêche pas d'obtenir l'adresse.
+
+Ensuite, `ip addr show eth1` affiche la ligne qui manquait. Votre adresse peut être différente :
+
+```text
+    inet 10.10.10.111/24 brd 10.10.10.255 scope global eth1
+```
 
 Seul ce poste passe par le DHCP. Le site, la compta et le DNS ont une adresse fixe : ce sont des serveurs, leurs clients doivent toujours les retrouver.
 
@@ -325,6 +528,13 @@ exit
 
 **Vous devez voir :** `10.10.20.10`.
 
+**Comment lire le résultat :**
+
+```text
+10.10.20.10
+```
+Grâce à `+short`, `dig` n'affiche que la réponse : l'adresse IP qui correspond à `web.hopla.lan`.
+
 ### 4. Prendre un pari, puis casser le DNS
 **Pariez :** si le DNS tombe, le poste d'accueil peut-il encore ouvrir le site ?
 
@@ -339,6 +549,20 @@ docker exec clab-hopla-poste curl -s -m 3 http://10.10.20.10
 - `curl ... http://10.10.20.10` : demande le site directement par son adresse, depuis `poste`.
 
 **Vous devez voir :** le nom ne répond plus (`no servers could be reached`), alors que le site répond toujours par son adresse.
+
+**Comment lire le résultat :**
+
+`pkill` n'affiche rien. Le `dig` échoue :
+
+```text
+;; communications error to 10.10.10.53#53: connection refused
+;; no servers could be reached
+```
+- `10.10.10.53#53` : l'adresse du serveur, et son port, le 53.
+- `connection refused` : la machine répond, mais plus aucun logiciel n'écoute sur ce port.
+- `no servers could be reached` : aucun serveur DNS n'a donné de réponse.
+
+Le `curl` affiche `Bienvenue chez Hopla Market`.
 
 ### 5. Réparer, puis éteindre
 **Pourquoi :** on relance le DNS, on vérifie, puis on rend les ressources du Codespace : le réseau de ce TP ne sert plus.
@@ -358,10 +582,24 @@ sudo containerlab destroy -t hopla.clab.yml --cleanup
 
 **Vous devez voir :** `10.10.20.10`, puis la suppression des machines.
 
+**Comment lire le résultat :**
+
+`dnsmasq` n'affiche rien au redémarrage. Le `dig` répond de nouveau `10.10.20.10`. Puis containerlab supprime tout :
+
+```text
+21:14:16 INFO Destroying lab name=hopla
+21:14:16 INFO Removed container name=clab-hopla-nouveau-pc
+...
+21:14:16 INFO Removed container name=clab-hopla-poste
+```
+Une ligne `Removed container` par machine, soit 8 lignes.
+
 ## Si ça bloque
 | Problème | Solution |
 |---|---|
 | `No such file or directory` sur `hopla.clab.yml` | Vous n'êtes pas dans le bon dossier : `cd /workspaces/*/labs/01-reseau` |
 | Une commande `ip` ou `curl` n'existe pas | Vous n'êtes pas dans la bonne machine : tapez `exit`, puis entrez à nouveau |
 | Le Codespace a été arrêté, ou tout est cassé | Repartir de zéro : `sudo containerlab deploy -t hopla.clab.yml --reconfigure` (`--reconfigure` recrée le réseau). Les règles du firewall sont alors à recharger |
+| `RTNETLINK answers: No such process` sur `ip route del` | La route n'existe plus : vous l'avez sans doute déjà supprimée. Vérifiez avec `ip route`, puis passez à la suite |
+| `RTNETLINK answers: File exists` sur `ip route add` | La route existe déjà : rien à réparer. Vérifiez avec `ip route` |
 | Une machine ne répond pas | Relancez la commande de démarrage ci-dessus |

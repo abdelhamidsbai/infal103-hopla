@@ -26,6 +26,39 @@ bash labs/00-verifier.sh
 
 Vous devez lire : `Environnement prêt`.
 
+**Comment lire le résultat :**
+
+```text
+OK      docker
+OK      containerlab
+OK      terraform
+OK      ansible-playbook
+OK      Docker répond
+
+Environnement prêt.
+```
+Une ligne par outil vérifié. `MANQUE` à la place de `OK` veut dire que l'installation n'est pas terminée : attendez une minute, puis relancez le script.
+
+## Lire un terminal
+Vous n'avez jamais utilisé Linux ? Ce n'est pas un problème : voici le nécessaire.
+
+- **L'invite** est le texte affiché avant votre commande. Elle indique où vous êtes. `poste:~#` veut dire que vous êtes dans la machine `poste`. Dans le Codespace, elle affiche le dossier où vous êtes.
+- **Le silence est bon signe :** beaucoup de commandes n'affichent rien quand elles réussissent.
+- **Une erreur se repère à ses mots :** `error`, `failed`, `not found`, `No such file`, `refused`.
+- **Vous n'avez pas à tout lire :** chaque étape du TP dit quelles lignes regarder. Ignorez les autres.
+- **Vos résultats ne seront pas identiques aux exemples :** les adresses MAC, les numéros et les durées changent à chaque fois. C'est normal.
+
+| Pour... | Tapez |
+|---|---|
+| Aller dans un dossier | `cd nom-du-dossier` |
+| Voir ce que contient le dossier | `ls` |
+| Afficher un fichier | `cat nom-du-fichier` |
+| Quitter une machine où vous êtes entré | `exit` |
+| Arrêter une commande qui ne se termine pas | `Ctrl+C` |
+| Retrouver la commande précédente | La flèche du haut |
+
+Pour modifier un fichier, ouvrez-le dans l'explorateur de fichiers, à gauche de VS Code, puis enregistrez avec `Ctrl+S` (`Cmd+S` sur Mac).
+
 ## Lire les énoncés
 Chaque TP explique ce que vous allez faire, puis le rôle de chaque commande. Les schémas s'affichent sur GitHub. Dans votre Codespace, ouvrez le fichier `README.md` du TP, puis faites `Ctrl+Maj+V` (`Cmd+Maj+V` sur Mac) pour afficher l'aperçu.
 

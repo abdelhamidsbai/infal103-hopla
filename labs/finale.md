@@ -36,4 +36,26 @@ Ces commandes sont celles des TP 2 et 3. Vous n'avez pas à les taper.
 
 **Vous devez voir :** la page du site, puis `Hopla Market reconstruit en ... secondes.`
 
+**Comment lire le résultat :** ces lignes arrivent dans cet ordre, au milieu d'un long défilement.
+
+```text
+Destroy complete! Resources: 10 destroyed.
+...
+Apply complete! Resources: 10 added, 0 changed, 0 destroyed.
+...
+PLAY RECAP *********************************************************************
+hopla-front-1              : ok=6    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+hopla-front-2              : ok=6    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+<h1>Hopla Market</h1>
+<p>Servi par hopla-front-1</p>
+
+Hopla Market reconstruit en 21 secondes.
+```
+- `10 destroyed` : tout ce que Terraform gère a disparu.
+- `10 added` : tout est revenu, à partir du code.
+- `changed=5`, `failed=0` : Ansible a tout réinstallé sur des serveurs vides.
+- `<h1>Hopla Market</h1>` : le site répond.
+- La dernière ligne donne votre temps. Le nôtre n'est qu'un exemple : le vôtre dépendra de la machine.
+
 **Question :** combien de temps auriez-vous mis sans ces fichiers ? Et que manque-t-il encore pour une vraie reprise après un incendie ?

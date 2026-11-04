@@ -18,6 +18,14 @@ Pour lancer le même contrôle dans un Codespace :
 bash formateur/verifier.sh 2>&1 | tee verification.log
 ```
 
+Pour revoir les résultats réels de toutes les commandes :
+
+```bash
+bash formateur/captures.sh 2>&1 | tee captures.log
+```
+
+Les réponses aux questions des TP ne sont pas dans ce dépôt, car il est public.
+
 ## Le jour du cours
 
 - Les Codespaces mettent environ 5 minutes à s'installer. Faites-les ouvrir dès la diapo 7.

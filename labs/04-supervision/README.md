@@ -40,6 +40,19 @@ terraform apply -auto-approve
 
 **Vous devez voir :** `Apply complete! Resources: 2 added`.
 
+**Comment lire le résultat :**
+
+```text
+Plan: 2 to add, 0 to change, 0 to destroy.
+docker_image.kuma: Creating...
+docker_image.kuma: Creation complete after 0s [id=sha256:70233f4acb51...]
+docker_container.kuma: Creating...
+docker_container.kuma: Creation complete after 0s [id=f925d45eb613...]
+
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+```
+Vous reconnaissez le format du TP 2. Avec `-auto-approve`, Terraform affiche son plan, mais n'attend pas votre `yes`. Les 2 ressources sont l'image et le conteneur.
+
 ### 2. Ouvrir l'interface
 **Pourquoi :** Uptime Kuma se pilote depuis une page web, sur le port `3001`.
 
@@ -60,6 +73,10 @@ Ces noms fonctionnent parce qu'Uptime Kuma est branché sur le réseau `hopla-fr
 
 **Vous devez voir :** trois sondes vertes, au bout d'une minute.
 
+**Comment lire le résultat :**
+
+Dans l'interface, chaque sonde a une pastille verte quand elle répond, et rouge sinon. Sa petite barre colorée garde l'historique : un trait par vérification. Il faut parfois attendre une minute, car les vérifications sont espacées.
+
 ### 4. Provoquer une panne en binôme
 **Pourquoi :** une alerte ne sert que si quelqu'un sait la lire. Votre binôme doit trouver la panne sans voir ce que vous faites.
 
@@ -73,6 +90,13 @@ Votre binôme se retourne et cherche la panne, uniquement dans l'interface.
 
 **Vous devez voir :** la sonde du serveur passe au rouge, alors que `hopla-lb` reste vert.
 
+**Comment lire le résultat :**
+
+```text
+hopla-front-1
+```
+`docker stop` affiche le nom du conteneur arrêté. Le reste se lit dans l'interface : quelle sonde est rouge, et laquelle reste verte ? Une sonde en panne affiche aussi un message d'erreur technique : pas besoin de le comprendre pour trouver la panne.
+
 **Question :** le client voit-il cette panne ? Faut-il réveiller quelqu'un ?
 
 ### 5. Tout casser
@@ -83,6 +107,13 @@ docker stop hopla-front-2
 - `docker stop hopla-front-2` : arrête le second serveur. Si vous avez arrêté celui-là à l'étape 4, arrêtez `hopla-front-1`.
 
 **Vous devez voir :** cette fois, `hopla-lb` passe au rouge aussi.
+
+**Comment lire le résultat :**
+
+```text
+hopla-front-2
+```
+`hopla-lb` tourne toujours, mais il n'a plus aucun serveur à qui transmettre les demandes. Sa sonde reçoit une erreur, et passe au rouge.
 
 **Question :** quelle différence avec la panne précédente ?
 
@@ -98,6 +129,23 @@ ansible-playbook playbook.yml
 - `ansible-playbook playbook.yml` : relance nginx sur les deux serveurs.
 
 **Vous devez voir :** les trois sondes redevenir vertes au bout d'une minute.
+
+**Comment lire le résultat :**
+
+```text
+hopla-front-1
+hopla-front-2
+...
+TASK [Démarrer nginx] **********************************************************
+changed: [hopla-front-2]
+changed: [hopla-front-1]
+
+PLAY RECAP *********************************************************************
+hopla-front-1              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+hopla-front-2              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+- Les deux noms au début : `docker start` a rallumé les deux conteneurs.
+- `changed=1` pour chacun : nginx a été relancé. Le reste était déjà en place.
 
 ## Si ça bloque
 | Problème | Solution |
