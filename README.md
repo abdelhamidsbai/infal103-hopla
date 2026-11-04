@@ -2,6 +2,16 @@
 
 Hopla Market vend en ligne. Tout tourne sur un seul PC, sous le bureau du comptable. En deux jours, nous allons construire son infrastructure, un incident à la fois.
 
+```mermaid
+flowchart LR
+  tp1["TP 1 : le réseau<br/>adresses, routes, firewall, DHCP, DNS"]
+  tp2["TP 2 : Terraform<br/>créer les machines"]
+  tp3["TP 3 : Ansible<br/>installer les logiciels"]
+  tp4["TP 4 : la supervision<br/>savoir avant les clients"]
+  fin["Finale<br/>tout reconstruire"]
+  tp1 --> tp2 --> tp3 --> tp4 --> fin
+```
+
 ## Démarrer (10 minutes, à faire une seule fois)
 1. Connectez-vous à votre compte GitHub **personnel**.
 2. Ouvrez ce lien : **https://codespaces.new/abdelhamidsbai/infal103-hopla**
@@ -11,8 +21,13 @@ Hopla Market vend en ligne. Tout tourne sur un seul PC, sous le bureau du compta
 ```bash
 bash labs/00-verifier.sh
 ```
+- `bash` : lance un script.
+- `labs/00-verifier.sh` : ce script vérifie que Docker, containerlab, Terraform et Ansible sont présents, et que Docker répond.
 
 Vous devez lire : `Environnement prêt`.
+
+## Lire les énoncés
+Chaque TP explique ce que vous allez faire, puis le rôle de chaque commande. Les schémas s'affichent sur GitHub. Dans votre Codespace, ouvrez le fichier `README.md` du TP, puis faites `Ctrl+Maj+V` (`Cmd+Maj+V` sur Mac) pour afficher l'aperçu.
 
 ## Règles d'usage
 - **Fin de séance :** arrêtez votre Codespace (☰ → *Stop Current Codespace*, ou depuis https://github.com/codespaces), pour préserver votre quota gratuit.
@@ -27,6 +42,8 @@ Le Codespace reste le chemin conseillé : c'est celui que nous suivons en cours.
 | Linux | Installez Docker, containerlab, Terraform et Ansible, puis lancez `bash labs/00-verifier.sh` | Tous |
 | Windows ou Mac | Installez Docker Desktop et VS Code avec l'extension Dev Containers. Ouvrez le dépôt, puis choisissez **Reopen in Container** | Tous |
 | Windows ou Mac, sans Dev Containers | Installez Docker Desktop, Terraform et Ansible | TP 2, 3 et 4 : containerlab, utilisé au TP 1, a besoin de Linux |
+
+Dans les énoncés, les commandes `cd /workspaces/*/...` sont prévues pour le Codespace et Dev Containers. Sinon, remplacez `/workspaces/*` par le dossier du dépôt sur votre PC.
 
 Si quelque chose bloque sur votre PC, repassez sur le Codespace : le formateur ne pourra pas dépanner chaque machine pendant le cours.
 
@@ -43,7 +60,7 @@ Commencez un TP seulement quand le formateur l'annonce. Une diapo jaune « On pa
 | Jour 2 | TP 2 : recréer Hopla avec Terraform | 70 min | [labs/02-iac-terraform](labs/02-iac-terraform/README.md) |
 | Jour 2 | TP 3 : configurer les serveurs avec Ansible | 35 min | [labs/03-ansible](labs/03-ansible/README.md) |
 | Jour 2 | TP 4 : savoir avant les clients | 30 min | [labs/04-supervision](labs/04-supervision/README.md) |
-| Jour 2 | Finale : tout reconstruire | 15 min | `bash labs/finale.sh` |
+| Jour 2 | Finale : tout reconstruire | 15 min | [labs/finale.md](labs/finale.md) |
 
 Vous avez terminé en avance ? Regardez les [exercices bonus](labs/bonus.md).
 

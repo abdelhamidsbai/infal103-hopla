@@ -125,5 +125,8 @@ contient "la supervision survit" "hopla-supervision" docker ps --format '{{.Name
 cd "$racine/labs/04-supervision" && terraform destroy -auto-approve -input=false >/dev/null 2>&1
 cd "$racine/labs/02-iac-terraform" && terraform destroy -auto-approve -input=false >/dev/null 2>&1
 
+# Résultats réels pour les exemples des énoncés : à retirer une fois les énoncés terminés.
+bash "$racine/formateur/captures.sh"
+
 echo; echo "RÉSULTAT : $ok OK, $ko échec(s)"
 [ "$ko" -eq 0 ]

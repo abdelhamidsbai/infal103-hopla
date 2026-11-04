@@ -1,9 +1,5 @@
 # Hopla Market : réseau de l'entreprise, avec une zone LAN, une DMZ et Internet.
-#
-#   poste  ─┐
-#   compta ─┼─ sw-bureau ── fw ── web (DMZ)
-#   dns    ─┤               │
-#   nouveau-pc ┘            └──── client (Internet)
+# Le schéma du réseau est dans README.md.
 name: hopla
 
 topology:
