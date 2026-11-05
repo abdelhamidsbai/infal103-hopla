@@ -8,6 +8,8 @@ docker network disconnect -f hopla-front hopla-supervision 2>/dev/null || true
 terraform -chdir="$racine/02-iac-terraform" destroy -auto-approve
 terraform -chdir="$racine/02-iac-terraform" apply -auto-approve
 docker network connect hopla-front hopla-supervision 2>/dev/null || true
+# Ansible ignore ansible.cfg si le dossier est modifiable par tout le monde.
+chmod o-w "$racine/03-ansible" || true
 (cd "$racine/03-ansible" && ansible-playbook playbook.yml)
 curl -fsS localhost:8080
 echo

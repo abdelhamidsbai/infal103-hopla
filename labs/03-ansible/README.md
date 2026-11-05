@@ -43,9 +43,11 @@ Avant de commencer, gardez les conteneurs créés au TP 2 : ils doivent être al
 **Pourquoi :** Ansible doit savoir où agir. Cette liste s'appelle l'inventaire.
 ```bash
 cd /workspaces/*/labs/03-ansible
+chmod o-w .
 cat inventory.ini
 ```
 - `cd /workspaces/*/labs/03-ansible` : se place dans le dossier du TP. Le `*` remplace le nom du dépôt.
+- `chmod o-w .` : retire aux autres utilisateurs le droit d'écrire dans ce dossier. Par sécurité, Ansible ignore le fichier `ansible.cfg` d'un dossier modifiable par tout le monde. Or c'est ce fichier qui lui indique où trouver l'inventaire.
 - `cat inventory.ini` : affiche le fichier. `[fronts]` est le nom d'un groupe, suivi de ses machines.
 
 **Vous devez voir :** `hopla-front-1` et `hopla-front-2`. Terraform a écrit ce fichier pour Ansible.
@@ -265,5 +267,6 @@ hopla-front-2              : ok=5    changed=0    unreachable=0    failed=0    s
 |---|---|
 | `Could not find or access 'inventory.ini'` | Le TP 2 n'est pas terminé : refaites `terraform apply` dans `labs/02-iac-terraform` |
 | `command not found: ansible-playbook` | Fermez le terminal et ouvrez-en un nouveau |
+| `world writable directory`, ou `no hosts matched` | Dans `labs/03-ansible`, lancez `chmod o-w .`, puis relancez le playbook |
 | `Could not resolve` ou erreur sur `apt` | Attendez une minute, puis relancez : le playbook peut être relancé sans danger |
 | Le serveur `hopla-front-3` est dans la liste | Remettez `front_count = 2` au TP 2, puis `terraform apply` |

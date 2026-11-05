@@ -8,7 +8,7 @@ Le site est reconstruit et réparti sur deux serveurs, mais personne ne regarde 
 **Ce que vous allez faire :**
 1. Démarrer la supervision avec Terraform.
 2. Placer une sonde sur le load balancer et une sur chaque serveur.
-3. En binôme, provoquer une panne que l'autre doit trouver avec l'interface.
+3. Provoquer une panne, après avoir noté ce que l'interface va montrer.
 4. Tout casser, comparer les deux pannes, puis remettre le site en route.
 
 ```mermaid
@@ -25,7 +25,7 @@ La supervision a son propre dossier Terraform, séparé de celui du site. Elle d
 
 **Où :** toutes les commandes de ce TP se tapent dans le terminal du Codespace.
 
-Ce TP se fait en binôme. Gardez le site du TP 3 allumé.
+Chacun travaille sur son propre Codespace. Gardez le site du TP 3 allumé.
 
 ### 1. Démarrer la supervision
 **Pourquoi :** la supervision est un logiciel comme un autre : on la décrit et on la déploie avec Terraform.
@@ -77,16 +77,16 @@ Ces noms fonctionnent parce qu'Uptime Kuma est branché sur le réseau `hopla-fr
 
 Dans l'interface, chaque sonde a une pastille verte quand elle répond, et rouge sinon. Sa petite barre colorée garde l'historique : un trait par vérification. Il faut parfois attendre une minute, car les vérifications sont espacées.
 
-### 4. Provoquer une panne en binôme
-**Pourquoi :** une alerte ne sert que si quelqu'un sait la lire. Votre binôme doit trouver la panne sans voir ce que vous faites.
+### 4. Provoquer une panne
+**Pourquoi :** une alerte ne sert que si quelqu'un sait la lire. Vous allez prévoir ce que l'interface va montrer, puis vérifier.
 
-L'un de vous tourne le dos. L'autre choisit un serveur et l'arrête :
+Avant de lancer la commande, notez votre réponse : si ce serveur s'arrête, quelle sonde passe au rouge ? Laquelle reste verte ?
 ```bash
 docker stop hopla-front-1
 ```
 - `docker stop hopla-front-1` : arrête ce serveur. Vous pouvez choisir `hopla-front-2` à la place.
 
-Votre binôme se retourne et cherche la panne, uniquement dans l'interface.
+Retournez dans l'interface et comparez avec votre réponse.
 
 **Vous devez voir :** la sonde du serveur passe au rouge, alors que `hopla-lb` reste vert.
 
@@ -153,3 +153,4 @@ hopla-front-2              : ok=5    changed=1    unreachable=0    failed=0    s
 | `network hopla-front not found` | Le TP 2 n'est plus en place : relancez `terraform apply` dans `labs/02-iac-terraform` |
 | La ligne `3001` n'apparaît pas | Ajoutez le port à la main dans l'onglet **Ports** |
 | Une sonde reste rouge | Vérifiez l'adresse : elle doit commencer par `http://`, sans numéro de port |
+| `world writable directory`, ou `no hosts matched` | Dans `labs/03-ansible`, lancez `chmod o-w .`, puis relancez le playbook |
